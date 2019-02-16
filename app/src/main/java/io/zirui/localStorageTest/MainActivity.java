@@ -19,15 +19,15 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_ID_MULTIPLE_PERMISSIONS = 1;
 
+    // Storage location setting.
     private final String filename = "myCSV.csv";
     private final String albumName = "Sensor";
-    private final int cacheLimit = 100;
 
-    private int count = 0;
-    private int countLimit = 10000;
+    // Cache setting.
+    private final int cacheLimit = 100;
+    private List<String> cacheList;
 
     private String content = "0.01,0.02,0.03";
-    private List<String> cacheList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,10 +38,10 @@ public class MainActivity extends AppCompatActivity {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (checkAndRequestPermissions()) {
-                test();
+                storeToDocument(content);
             }
         } else {
-            test();
+            storeToDocument(content);
         }
     }
 
@@ -71,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
                         perms.put(permissions[i], grantResults[i]);
                     }
                     if (perms.get(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-                        test();
+                        storeToDocument(content);
                     }else{
                         checkAndRequestPermissions();
                     }
@@ -80,16 +80,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void test() {
-        while (true) {
-            storeToDocument(content);
-        }
-    }
-
     private void storeToDocument(String content) {
-        if (count++ <= countLimit) return;
-        count = 0;
-
         cacheList.add(content);
         if (cacheList.size() < cacheLimit) return;
 
