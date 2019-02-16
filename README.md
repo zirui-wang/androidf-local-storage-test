@@ -1,6 +1,6 @@
 # Android Local (external) Storage Test
 
-In this case, I used a cache list to avoid too much IO operation. Please modify code to make sure the last piece of new content can be writen into the file.
+In this case, I used a cache list to avoid too much IO operation. Please modify code to make sure the last piece of new content will be writen into the file.
 
 ## Steps
 
@@ -35,7 +35,7 @@ protected void onCreate(Bundle savedInstanceState) {
     }
 }
 
-// Callback function after user accept the permission.
+// Use a list to store permissions for future potential implementations.
 @RequiresApi(api = Build.VERSION_CODES.M)
 private boolean checkAndRequestPermissions() {
     List<String> listPermissionsNeeded = new ArrayList<>();
@@ -48,6 +48,28 @@ private boolean checkAndRequestPermissions() {
         return false;
     }
     return true;
+}
+
+// Callback function after user accept the permission.
+@RequiresApi(api = Build.VERSION_CODES.M)
+@Override
+public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+    switch (requestCode) {
+        case REQUEST_ID_MULTIPLE_PERMISSIONS:{
+            Map<String, Integer> perms = new HashMap<>();
+            perms.put(Manifest.permission.WRITE_EXTERNAL_STORAGE, PackageManager.PERMISSION_GRANTED);
+            if (grantResults.length > 0) {
+                for (int i = 0; i < permissions.length; i++) {
+                    perms.put(permissions[i], grantResults[i]);
+                }
+                if (perms.get(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                    storeToDocument(content);
+                }else{
+                    checkAndRequestPermissions();
+                }
+            }
+        }
+    }
 }
 ```
 
