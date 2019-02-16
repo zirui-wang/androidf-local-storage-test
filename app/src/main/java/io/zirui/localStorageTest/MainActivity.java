@@ -4,16 +4,12 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.Manifest.permission;
 import android.os.Build;
-import android.os.Environment;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,25 +17,31 @@ import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String TAG_STORAGE = "Storage Test";
-    private static final String TAG_DIRECTORY = "Create directory";
     private static final int REQUEST_ID_MULTIPLE_PERMISSIONS = 1;
 
-    private String content = "Hello World";
-    private final String filename = "myText.txt";
+    private final String filename = "myCSV.csv";
     private final String albumName = "Sensor";
+    private final int cacheLimit = 100;
+
+    private int count = 0;
+    private int countLimit = 10000;
+
+    private String content = "0.01,0.02,0.03";
+    private List<String> cacheList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        cacheList = new ArrayList<>();
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (checkAndRequestPermissions()) {
-                storeToDocument(content);
+                test();
             }
         } else {
-            storeToDocument(content);
+            test();
         }
     }
 
@@ -69,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
                         perms.put(permissions[i], grantResults[i]);
                     }
                     if (perms.get(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-                        storeToDocument(content);
+                        test();
                     }else{
                         checkAndRequestPermissions();
                     }
@@ -78,39 +80,20 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void test() {
+        while (true) {
+            storeToDocument(content);
+        }
+    }
+
     private void storeToDocument(String content) {
-        File myDir = getPublicAlbumStorageDir(albumName);
-        File file = new File(myDir, filename);
-        Log.i(TAG_STORAGE, "Write content successful");
-        if (file.exists()) {
-            file.delete();
-        }
-        try {
-            FileOutputStream out = new FileOutputStream(file);
-            out.write(content.getBytes());
-            out.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+        if (count++ <= countLimit) return;
+        count = 0;
 
-    private File getPublicAlbumStorageDir(String albumName) {
-        // Get the directory for the user's public pictures directory.
-        File file = new File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_DOCUMENTS), albumName);
-        if (!file.exists()) {
-            if (!file.mkdirs()) {
-                Log.e(TAG_DIRECTORY, "Directory not created");
-            }
-        }
-        return file;
-    }
+        cacheList.add(content);
+        if (cacheList.size() < cacheLimit) return;
 
-    private boolean isExternalStorageWritable() {
-        String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state)) {
-            return true;
-        }
-        return false;
+        CsvStorage.writeCsvFile(filename, albumName, new ArrayList<>(cacheList));
+        cacheList.clear();
     }
 }
